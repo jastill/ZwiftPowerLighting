@@ -4,6 +4,7 @@
 #include "hardware/spi.h"
 #include "pico/stdlib.h"
 
+#include <deque>
 #include <string>
 #include <vector>
 
@@ -20,6 +21,8 @@ public:
 
   // Basic drawing primitives
   void fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, Color color);
+  void draw_line(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1,
+                 Color color);
 
 private:
   void write_command(uint8_t cmd);
@@ -33,4 +36,5 @@ private:
 
   std::vector<std::string> log_lines;
   const size_t MAX_LOG_LINES = 5;
+  std::deque<uint16_t> power_history;
 };

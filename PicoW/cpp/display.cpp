@@ -214,19 +214,71 @@ void Display::text(const char *msg, uint16_t x, uint16_t y, Color color,
   }
 }
 
+// Bresenham's line algorithm
+void Display::draw_line(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1,
+                        Color color) {
+  int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+  int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+  int err = dx + dy, e2;
+
+  while (true) {
+    fill_rect(x0, y0, 1, 1, color);
+    if (x0 == x1 && y0 == y1)
+      break;
+    e2 = 2 * err;
+    if (e2 >= dy) {
+      err += dy;
+      x0 += sx;
+    }
+    if (e2 <= dx) {
+      err += dx;
+      y0 += sy;
+    }
+  }
+}
+
 void Display::update_status(bool connected, uint16_t power, Color zone_color) {
   if (connected) {
     // Fill screen with zone color
     clear(zone_color);
 
-    // Determine text color for contrast (simple brightness check)
-    // Brightness ~ (R*299 + G*587 + B*114) / 1000
+    // Determine text color for contrast
     uint32_t brightness =
         (zone_color.r * 299 + zone_color.g * 587 + zone_color.b * 114) / 1000;
     Color text_color =
         (brightness > 128) ? Color{0, 0, 0} : Color{255, 255, 255};
 
-    // Draw "POWER" or "WATTS"
+    // --- Draw Graph ---
+    power_history.push_back(power);
+    if (power_history.size() > DISPLAY_WIDTH) {
+      power_history.pop_front();
+    }
+
+    uint16_t prev_x = 0;
+    uint16_t prev_y = DISPLAY_HEIGHT - 1; // Start at bottom
+
+    // Scaling: 400W -> ~Half screen? Or full?
+    // Let's map 0-500W to DISPLAY_HEIGHT-1 to 0
+    const uint16_t MAX_GRAPH_POWER = 500;
+
+    for (size_t i = 0; i < power_history.size(); i++) {
+      uint16_t p = power_history[i];
+      if (p > MAX_GRAPH_POWER)
+        p = MAX_GRAPH_POWER;
+
+      uint16_t y =
+          DISPLAY_HEIGHT - 1 - (p * (DISPLAY_HEIGHT - 1) / MAX_GRAPH_POWER);
+      uint16_t x = i;
+
+      if (i > 0) {
+        draw_line(prev_x, prev_y, x, y, text_color);
+      }
+      prev_x = x;
+      prev_y = y;
+    }
+    // ------------------
+
+    // Draw "WATTS"
     text("WATTS", 80, 20, text_color, 2);
 
     // Draw Power Number (Large)

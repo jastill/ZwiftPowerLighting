@@ -5,6 +5,8 @@
 #include "pico/cyw43_arch.h"
 #include "pico/stdlib.h"
 #include <cstdio>
+#include <deque>
+#include <numeric>
 
 LEDController leds;
 Display display;
@@ -12,6 +14,10 @@ BLEClient client;
 
 static btstack_timer_source_t heartbeat;
 static uint16_t last_power = 0;
+
+// Smoothing Buffer (Size 3 for approx 1s smoothing if ~3Hz updates)
+static std::deque<uint16_t> power_history;
+static const size_t SMOOTHING_WINDOW = 3;
 
 void heartbeat_handler(btstack_timer_source_t *ts) {
   if (client.is_connected()) {
@@ -23,11 +29,24 @@ void heartbeat_handler(btstack_timer_source_t *ts) {
   btstack_run_loop_add_timer(ts);
 }
 
-void on_power_update(uint16_t power) {
-  last_power = power;
-  printf("Power: %d W\n", power);
-  Color zone_color = leds.update_from_power(power);
-  display.update_status(true, power, zone_color);
+void on_power_update(uint16_t raw_power) {
+  // Add to buffer
+  power_history.push_back(raw_power);
+  if (power_history.size() > SMOOTHING_WINDOW) {
+    power_history.pop_front();
+  }
+
+  // Calculate Average
+  uint32_t sum = 0;
+  for (uint16_t p : power_history)
+    sum += p;
+  uint16_t avg_power = sum / power_history.size();
+
+  last_power = avg_power;
+  printf("Power: %d W (Raw: %d)\n", avg_power, raw_power);
+
+  Color zone_color = leds.update_from_power(avg_power);
+  display.update_status(true, avg_power, zone_color);
 }
 
 void on_scan_result(const char *mac, const char *name) {
