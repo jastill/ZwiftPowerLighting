@@ -1,0 +1,254 @@
+#include "display.hpp"
+#include <cstdio>
+#include <cstring>
+
+// Simple 5x7 font data (ISO 8859-1 subset)
+static const uint8_t font[] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, // SPACE
+    0x00, 0x00, 0x5F, 0x00, 0x00, // !
+    0x00, 0x07, 0x00, 0x07, 0x00, // "
+    0x14, 0x7F, 0x14, 0x7F, 0x14, // #
+    0x24, 0x2A, 0x7F, 0x2A, 0x12, // $
+    0x23, 0x13, 0x08, 0x64, 0x62, // %
+    0x36, 0x49, 0x55, 0x22, 0x50, // &
+    0x00, 0x05, 0x03, 0x00, 0x00, // '
+    0x00, 0x1C, 0x22, 0x41, 0x00, // (
+    0x00, 0x41, 0x22, 0x1C, 0x00, // )
+    0x14, 0x08, 0x3E, 0x08, 0x14, // *
+    0x08, 0x08, 0x3E, 0x08, 0x08, // +
+    0x00, 0x50, 0x30, 0x00, 0x00, // ,
+    0x08, 0x08, 0x08, 0x08, 0x08, // -
+    0x00, 0x60, 0x60, 0x00, 0x00, // .
+    0x20, 0x10, 0x08, 0x04, 0x02, // /
+    0x3E, 0x51, 0x49, 0x45, 0x3E, // 0
+    0x00, 0x42, 0x7F, 0x40, 0x00, // 1
+    0x42, 0x61, 0x51, 0x49, 0x46, // 2
+    0x21, 0x41, 0x45, 0x4B, 0x31, // 3
+    0x18, 0x14, 0x12, 0x7F, 0x10, // 4
+    0x27, 0x45, 0x45, 0x45, 0x39, // 5
+    0x3C, 0x4A, 0x49, 0x49, 0x30, // 6
+    0x01, 0x71, 0x09, 0x05, 0x03, // 7
+    0x36, 0x49, 0x49, 0x49, 0x36, // 8
+    0x06, 0x49, 0x49, 0x29, 0x1E, // 9
+    0x00, 0x36, 0x36, 0x00, 0x00, // :
+    0x00, 0x56, 0x36, 0x00, 0x00, // ;
+    0x08, 0x14, 0x22, 0x41, 0x00, // <
+    0x14, 0x14, 0x14, 0x14, 0x14, // =
+    0x00, 0x41, 0x22, 0x14, 0x08, // >
+    0x02, 0x01, 0x51, 0x09, 0x06, // ?
+    0x32, 0x49, 0x79, 0x41, 0x3E, // @
+    0x7E, 0x11, 0x11, 0x11, 0x7E, // A
+    0x7F, 0x49, 0x49, 0x49, 0x36, // B
+    0x3E, 0x41, 0x41, 0x41, 0x22, // C
+    0x7F, 0x41, 0x41, 0x22, 0x1C, // D
+    0x7F, 0x49, 0x49, 0x49, 0x41, // E
+    0x7F, 0x09, 0x09, 0x09, 0x01, // F
+    0x3E, 0x41, 0x49, 0x49, 0x7A, // G
+    0x7F, 0x08, 0x08, 0x08, 0x7F, // H
+    0x00, 0x41, 0x7F, 0x41, 0x00, // I
+    0x20, 0x40, 0x41, 0x3F, 0x01, // J
+    0x7F, 0x08, 0x14, 0x22, 0x41, // K
+    0x7F, 0x40, 0x40, 0x40, 0x40, // L
+    0x7F, 0x02, 0x0C, 0x02, 0x7F, // M
+    0x7F, 0x04, 0x08, 0x10, 0x7F, // N
+    0x3E, 0x41, 0x41, 0x41, 0x3E, // O
+    0x7F, 0x09, 0x09, 0x09, 0x06, // P
+    0x3E, 0x41, 0x51, 0x21, 0x5E, // Q
+    0x7F, 0x09, 0x19, 0x29, 0x46, // R
+    0x46, 0x49, 0x49, 0x49, 0x31, // S
+    0x01, 0x01, 0x7F, 0x01, 0x01, // T
+    0x3F, 0x40, 0x40, 0x40, 0x3F, // U
+    0x1F, 0x20, 0x40, 0x20, 0x1F, // V
+    0x3F, 0x40, 0x38, 0x40, 0x3F, // W
+    0x63, 0x14, 0x08, 0x14, 0x63, // X
+    0x07, 0x08, 0x70, 0x08, 0x07, // Y
+    0x61, 0x51, 0x49, 0x45, 0x43, // Z
+};
+
+Display::Display() {}
+
+// ST7789 240x135 offsets
+static const uint16_t X_OFFSET = 40;
+static const uint16_t Y_OFFSET = 53;
+
+void Display::init() {
+  spi_init(spi_default, 10 * 1000 * 1000); // 10MHz
+  spi_set_format(spi_default, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
+  gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
+  gpio_set_function(PIN_MOSI, GPIO_FUNC_SPI);
+
+  gpio_init(PIN_CS);
+  gpio_set_dir(PIN_CS, GPIO_OUT);
+  gpio_put(PIN_CS, 1);
+
+  gpio_init(PIN_DC);
+  gpio_set_dir(PIN_DC, GPIO_OUT);
+  gpio_put(PIN_DC, 0);
+
+  // Initialize backlight
+  gpio_init(PIN_BL);
+  gpio_set_dir(PIN_BL, GPIO_OUT);
+  gpio_put(PIN_BL, 1);
+
+  // Initialization sequence for ST7789
+  write_command(0x01); // SWRESET
+  sleep_ms(150);
+  write_command(0x11); // SLPOUT
+  sleep_ms(50);
+  write_command(0x3A); // COLMOD
+  write_data(0x05);    // 16-bit color
+  write_command(0x36); // MADCTL
+  // 0x70: MX | MY | MV (Exchange XY) -> Landscape
+  write_data(0x70);
+  write_command(0x21); // INVON
+  write_command(0x13); // NORON
+  write_command(0x29); // DISPON
+
+  clear();
+}
+
+void Display::write_command(uint8_t cmd) {
+  gpio_put(PIN_DC, 0);
+  gpio_put(PIN_CS, 0);
+  spi_write_blocking(spi_default, &cmd, 1);
+  gpio_put(PIN_CS, 1);
+}
+
+void Display::write_data(uint8_t data) {
+  gpio_put(PIN_DC, 1);
+  gpio_put(PIN_CS, 0);
+  spi_write_blocking(spi_default, &data, 1);
+  gpio_put(PIN_CS, 1);
+}
+
+void Display::write_data(const uint8_t *data, size_t len) {
+  gpio_put(PIN_DC, 1);
+  gpio_put(PIN_CS, 0);
+  spi_write_blocking(spi_default, data, len);
+  gpio_put(PIN_CS, 1);
+}
+
+void Display::set_window(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
+  x += X_OFFSET;
+  y += Y_OFFSET;
+
+  write_command(0x2A); // CASET
+  uint8_t data_x[] = {(uint8_t)(x >> 8), (uint8_t)(x & 0xFF),
+                      (uint8_t)((x + w - 1) >> 8),
+                      (uint8_t)((x + w - 1) & 0xFF)};
+  write_data(data_x, 4);
+
+  write_command(0x2B); // RASET
+  uint8_t data_y[] = {(uint8_t)(y >> 8), (uint8_t)(y & 0xFF),
+                      (uint8_t)((y + h - 1) >> 8),
+                      (uint8_t)((y + h - 1) & 0xFF)};
+  write_data(data_y, 4);
+
+  write_command(0x2C); // RAMWR
+}
+
+uint16_t Display::color565(Color color) {
+  return ((color.r & 0xF8) << 8) | ((color.g & 0xFC) << 3) | (color.b >> 3);
+}
+
+void Display::clear(Color color) {
+  fill_rect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, color);
+}
+
+void Display::fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+                        Color color) {
+  if (x >= DISPLAY_WIDTH || y >= DISPLAY_HEIGHT)
+    return;
+  if (x + w > DISPLAY_WIDTH)
+    w = DISPLAY_WIDTH - x;
+  if (y + h > DISPLAY_HEIGHT)
+    h = DISPLAY_HEIGHT - y;
+
+  set_window(x, y, w, h);
+
+  uint16_t c = color565(color);
+  uint8_t data[2] = {(uint8_t)(c >> 8), (uint8_t)(c & 0xFF)};
+
+  gpio_put(PIN_DC, 1);
+  gpio_put(PIN_CS, 0);
+  for (int i = 0; i < w * h; i++) {
+    spi_write_blocking(spi_default, data, 2);
+  }
+  gpio_put(PIN_CS, 1);
+}
+
+void Display::draw_char(char c, uint16_t x, uint16_t y, Color color,
+                        uint8_t scale) {
+  if (c >= 'a' && c <= 'z') {
+    c -= 32; // Convert to uppercase
+  }
+  if (c < 32 || c > 90)
+    return; // Simple subset check
+  const uint8_t *glyph = &font[(c - 32) * 5];
+
+  for (int i = 0; i < 5; i++) {
+    uint8_t line = glyph[i];
+    for (int j = 0; j < 7; j++) {
+      if (line & 0x01) {
+        // Pixel on
+        fill_rect(x + i * scale, y + j * scale, scale, scale, color);
+      }
+      line >>= 1;
+    }
+  }
+}
+
+void Display::text(const char *msg, uint16_t x, uint16_t y, Color color,
+                   uint8_t scale) {
+  uint16_t cursor_x = x;
+  uint16_t cursor_y = y;
+  while (*msg) {
+    if (*msg == '\n') {
+      cursor_y += 8 * scale; // 7 height + 1 gap
+      cursor_x = x;
+    } else {
+      draw_char(*msg, cursor_x, cursor_y, color, scale);
+      cursor_x += 6 * scale; // 5 width + 1 gap
+    }
+    msg++;
+  }
+}
+
+void Display::update_status(bool connected, uint16_t power, Color zone_color) {
+  clear();
+
+  if (connected) {
+    text("CONNECTED", 10, 10, {0, 255, 0}, 3);
+  } else {
+    text("SCANNING...", 10, 10, {255, 0, 0}, 3);
+    draw_logs();
+  }
+
+  char buf[32];
+  sprintf(buf, "Power: %d W", power);
+  text(buf, 10, 50, {255, 255, 255}, 3);
+
+  fill_rect(10, 90, 220, 30, zone_color);
+}
+
+void Display::add_log_line(const char *msg) {
+  if (log_lines.size() >= MAX_LOG_LINES) {
+    log_lines.erase(log_lines.begin());
+  }
+  log_lines.push_back(std::string(msg));
+  draw_logs();
+}
+
+void Display::draw_logs() {
+  uint16_t start_y = 50;
+  // clear log area (y=50 to bottom)
+  // Note: status text is at y=50 usually (Power: ...), but only when connected.
+  // When scanning, we can use that space.
+  // Let's assume logs are only relevant when scanning.
+
+  fill_rect(0, start_y, DISPLAY_WIDTH, DISPLAY_HEIGHT - start_y, {0, 0, 0});
+
+  for (size_t i = 0; i < log_lines.size(); i++) {
+    text(log_lines[i].c_str(), 5, start_y + (i * 10), {200, 200, 200}, 1);
+  }
+}
