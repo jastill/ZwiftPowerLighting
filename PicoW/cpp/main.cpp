@@ -2,6 +2,7 @@
 #include "btstack_run_loop.h"
 #include "display.hpp"
 #include "leds.hpp"
+#include "pico/cyw43_arch.h"
 #include "pico/stdlib.h"
 #include <cstdio>
 
@@ -18,7 +19,7 @@ void heartbeat_handler(btstack_timer_source_t *ts) {
   } else {
     printf("[Status] Scanning...\n");
   }
-  btstack_run_loop_set_timer(ts, 2000);
+  btstack_run_loop_set_timer(ts, 5000);
   btstack_run_loop_add_timer(ts);
 }
 
@@ -44,6 +45,12 @@ int main() {
   stdio_init_all();
   sleep_ms(5000); // Wait for USB serial
   printf("ZwiftPowerLighting C++ Starting...\n");
+
+  // Initialize CYW43 (Required for WiFi/BT)
+  if (cyw43_arch_init()) {
+    printf("Failed to initialize cyw43_arch\n");
+    return -1;
+  }
 
   // 1. Initialize
   leds.init();

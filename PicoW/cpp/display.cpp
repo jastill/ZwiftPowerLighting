@@ -215,20 +215,41 @@ void Display::text(const char *msg, uint16_t x, uint16_t y, Color color,
 }
 
 void Display::update_status(bool connected, uint16_t power, Color zone_color) {
-  clear();
-
   if (connected) {
-    text("CONNECTED", 10, 10, {0, 255, 0}, 3);
+    // Fill screen with zone color
+    clear(zone_color);
+
+    // Determine text color for contrast (simple brightness check)
+    // Brightness ~ (R*299 + G*587 + B*114) / 1000
+    uint32_t brightness =
+        (zone_color.r * 299 + zone_color.g * 587 + zone_color.b * 114) / 1000;
+    Color text_color =
+        (brightness > 128) ? Color{0, 0, 0} : Color{255, 255, 255};
+
+    // Draw "POWER" or "WATTS"
+    text("WATTS", 80, 20, text_color, 2);
+
+    // Draw Power Number (Large)
+    char buf[16];
+    sprintf(buf, "%d", power);
+
+    // Simple centering attempt (assumes char width = 6 * scale)
+    // Scale 10 = 60px width per char
+    // Screen width 240
+    int len = strlen(buf);
+    int char_width_px = 6 * 10;
+    int total_width = len * char_width_px;
+    int start_x = (DISPLAY_WIDTH - total_width) / 2;
+    if (start_x < 0)
+      start_x = 0; // Prevent wrapping
+
+    text(buf, start_x, 50, text_color, 10);
   } else {
+    // Scanning Mode (Black Background)
+    clear({0, 0, 0});
     text("SCANNING...", 10, 10, {255, 0, 0}, 3);
     draw_logs();
   }
-
-  char buf[32];
-  sprintf(buf, "Power: %d W", power);
-  text(buf, 10, 50, {255, 255, 255}, 3);
-
-  fill_rect(10, 90, 220, 30, zone_color);
 }
 
 void Display::add_log_line(const char *msg) {

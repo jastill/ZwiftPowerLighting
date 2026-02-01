@@ -33,4 +33,13 @@ private:
   gatt_client_characteristic_t characteristic;
   gatt_client_notification_t notification_registration;
   btstack_packet_callback_registration_t hci_event_callback_registration;
+
+  enum class DiscoveryState {
+    IDLE,
+    DISCOVERING_SERVICES,
+    DISCOVERING_CHARS,
+    SUBSCRIBING,
+    SUBSCRIBED
+  };
+  DiscoveryState discovery_state = DiscoveryState::IDLE;
 };
