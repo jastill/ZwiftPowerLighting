@@ -1,5 +1,20 @@
 cmake_minimum_required(VERSION 3.13)
 
+# Parse .env if it exists
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.env")
+    file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/.env" ConfigContents)
+    foreach(NameVar ${ConfigContents})
+        if("${NameVar}" MATCHES "^([^=]+)=(.*)$")
+            set(ENV_VAR_NAME "${CMAKE_MATCH_1}")
+            set(ENV_VAR_VALUE "${CMAKE_MATCH_2}")
+            add_compile_definitions(${ENV_VAR_NAME}="${ENV_VAR_VALUE}")
+            message(STATUS "Loaded from .env: ${ENV_VAR_NAME}")
+        endif()
+    endforeach()
+else()
+    message(WARNING ".env file not found! WiFi credentials will be missing.")
+endif()
+
 # Initialize Pico SDK
 include(pico_sdk_import.cmake)
 
@@ -26,7 +41,7 @@ target_include_directories(ZwiftPowerLighting PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 # Link libraries
 target_link_libraries(ZwiftPowerLighting
     pico_stdlib
-    pico_cyw43_arch_none # We handle cyw43 for BLE but using BTstack helpers usually
+    pico_cyw43_arch_lwip_threadsafe_background
     pico_btstack_ble
     pico_btstack_cyw43
     hardware_pio

@@ -71,6 +71,17 @@ int main() {
     return -1;
   }
 
+  // WiFi Connection
+  cyw43_arch_enable_sta_mode();
+  printf("Connecting to WiFi: %s...\n", WIFI_SSID);
+  if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD,
+                                         CYW43_AUTH_WPA2_AES_PSK, 10000)) {
+    printf("WiFi Connection Failed!\n");
+    // Continue anyway? Or halt? Let's continue but log error.
+  } else {
+    printf("WiFi Connected!\n");
+  }
+
   // 1. Initialize
   leds.init();
   display.init();
