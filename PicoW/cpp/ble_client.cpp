@@ -12,7 +12,8 @@ static void static_packet_handler(uint8_t packet_type, uint16_t channel,
 }
 
 BLEClient::BLEClient()
-    : connected(false), connection_handle(HCI_CON_HANDLE_INVALID) {
+    : connected(false), connection_handle(HCI_CON_HANDLE_INVALID),
+      last_notification_ms(0) {
   instance = this;
 }
 
@@ -115,6 +116,7 @@ void BLEClient::packet_handler(uint8_t packet_type, uint16_t channel,
       printf("Connected! Handle: 0x%04x. Starting Service Discovery...\n",
              connection_handle);
       connected = true;
+      last_notification_ms = to_ms_since_boot(get_absolute_time());
 
       // Update UI immediately
       if (instance && instance->power_callback) {
@@ -262,7 +264,22 @@ void BLEClient::packet_handler(uint8_t packet_type, uint16_t channel,
         power_callback((uint16_t)power);
       }
     }
+    // Update Watchdog
+    if (instance) {
+      instance->last_notification_ms = to_ms_since_boot(get_absolute_time());
+    }
     break;
   }
+  }
+}
+
+void BLEClient::check_watchdog() {
+  if (!connected)
+    return;
+
+  uint32_t now = to_ms_since_boot(get_absolute_time());
+  if (now - last_notification_ms > 5000) {
+    printf("[Watchdog] No notifications for 5s. Forcing Disconnect!\n");
+    gap_disconnect(connection_handle);
   }
 }

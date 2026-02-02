@@ -15,7 +15,8 @@ public:
   void clear(Color color = {0, 0, 0});
   void text(const char *msg, uint16_t x, uint16_t y,
             Color color = {255, 255, 255}, uint8_t scale = 1);
-  void update_status(bool connected, uint16_t power, Color zone_color);
+  void update_status(bool connected, uint16_t power, Color zone_color,
+                     bool show_ftp, uint16_t ftp);
   void add_log_line(const char *msg);
   void draw_logs();
 

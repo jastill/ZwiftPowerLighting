@@ -51,8 +51,8 @@ void LEDController::flash_green() {
   clear();
 }
 
-Color LEDController::update_from_power(uint16_t power) {
-  float percentage = ((float)power / (float)FTP) * 100.0f;
+Color LEDController::update_from_power(uint16_t power, uint16_t ftp) {
+  float percentage = ((float)power / (float)ftp) * 100.0f;
   Color target_color = {0, 0, 0};
 
   for (const auto &zone : POWER_ZONES) {

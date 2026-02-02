@@ -57,6 +57,10 @@ In the code the following constraints apply:
 - Allow the BLE name of the trainer to be configurable.
 
 
+## Philips Hue
 
+The Philips Hue bridge will be used to control the lights based on the power output. The Philips Hue bridge will be connected to the Raspberry Pi Pico W via WiFi.
+
+https://developers.meethue.com/develop/get-started-2/
 
 

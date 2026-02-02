@@ -15,7 +15,38 @@ BLEClient client;
 HueClient hue;
 
 static btstack_timer_source_t heartbeat;
+static btstack_timer_source_t ui_timer;
+
 static uint16_t last_power = 0;
+static uint16_t current_ftp = DEFAULT_FTP;
+static bool show_ftp = false;
+
+// Button State Tracking (Simple Polling)
+struct Button {
+  uint pin;
+  bool last_state; // true = pressed (LOW due to pullup)
+
+  void init(uint p) {
+    pin = p;
+    gpio_init(pin);
+    gpio_set_dir(pin, GPIO_IN);
+    gpio_pull_up(pin);
+    last_state = false;
+  }
+
+  bool is_pressed() {
+    return !gpio_get(pin); // Active Low
+  }
+
+  bool just_pressed() {
+    bool pressed = is_pressed();
+    bool just = pressed && !last_state;
+    last_state = pressed;
+    return just;
+  }
+};
+
+Button btn_a, btn_b, btn_x, btn_y;
 
 // Smoothing Buffer (Size 3 for approx 1s smoothing if ~3Hz updates)
 static std::deque<uint16_t> power_history;
@@ -23,11 +54,13 @@ static const size_t SMOOTHING_WINDOW = 3;
 
 void heartbeat_handler(btstack_timer_source_t *ts) {
   if (client.is_connected()) {
-    printf("[Status] Connected | Power: %d W\n", last_power);
+    printf("[Status] Connected | Power: %d W | FTP: %d\n", last_power,
+           current_ftp);
+    client.check_watchdog();
   } else {
-    printf("[Status] Scanning...\n");
+    // printf("[Status] Scanning...\n");
   }
-  btstack_run_loop_set_timer(ts, 5000);
+  btstack_run_loop_set_timer(ts, 1000);
   btstack_run_loop_add_timer(ts);
 }
 
@@ -47,13 +80,46 @@ void on_power_update(uint16_t raw_power) {
   last_power = avg_power;
   printf("Power: %d W (Raw: %d)\n", avg_power, raw_power);
 
-  Color zone_color = leds.update_from_power(avg_power);
-  display.update_status(true, avg_power, zone_color);
+  Color zone_color = leds.update_from_power(avg_power, current_ftp);
+  display.update_status(true, avg_power, zone_color, show_ftp, current_ftp);
 
   // Update Hue
   cyw43_arch_lwip_begin();
   hue.update(zone_color);
   cyw43_arch_lwip_end();
+}
+
+void ui_handler(btstack_timer_source_t *ts) {
+  // Poll Buttons
+  if (btn_y.just_pressed()) {
+    show_ftp = !show_ftp;
+    printf("UI: Toggle FTP Display -> %d\n", show_ftp);
+  }
+
+  bool changed = false;
+  if (show_ftp) {
+    if (btn_a.just_pressed()) {
+      current_ftp++;
+      changed = true;
+      printf("UI: FTP +1 -> %d\n", current_ftp);
+    }
+    if (btn_b.just_pressed()) {
+      if (current_ftp > 0)
+        current_ftp--;
+      changed = true;
+      printf("UI: FTP -1 -> %d\n", current_ftp);
+    }
+  }
+
+  // Force display update if UI changed and we are connected (so the screen is
+  // active)
+  if (changed || (btn_y.just_pressed() && client.is_connected())) {
+    Color zone_color = leds.update_from_power(last_power, current_ftp);
+    display.update_status(true, last_power, zone_color, show_ftp, current_ftp);
+  }
+
+  btstack_run_loop_set_timer(ts, 50); // 20Hz polling
+  btstack_run_loop_add_timer(ts);
 }
 
 void on_scan_result(const char *mac, const char *name) {
@@ -113,8 +179,18 @@ int main() {
 
   // 5. Setup Heartbeat Timer
   heartbeat.process = &heartbeat_handler;
-  btstack_run_loop_set_timer(&heartbeat, 2000);
+  btstack_run_loop_set_timer(&heartbeat, 1000);
   btstack_run_loop_add_timer(&heartbeat);
+
+  // 6. Setup UI/Button Timer
+  btn_a.init(PIN_BUTTON_A);
+  btn_b.init(PIN_BUTTON_B);
+  btn_x.init(PIN_BUTTON_X);
+  btn_y.init(PIN_BUTTON_Y);
+
+  ui_timer.process = &ui_handler;
+  btstack_run_loop_set_timer(&ui_timer, 50);
+  btstack_run_loop_add_timer(&ui_timer);
 
   // Note: In C++ / generic BTstack, the 'main loop' is handled by BTstack.
   // We don't write a `while(true)` loop.

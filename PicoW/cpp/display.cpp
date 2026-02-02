@@ -237,7 +237,8 @@ void Display::draw_line(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1,
   }
 }
 
-void Display::update_status(bool connected, uint16_t power, Color zone_color) {
+void Display::update_status(bool connected, uint16_t power, Color zone_color,
+                            bool show_ftp, uint16_t ftp) {
   if (connected) {
     // Fill screen with zone color
     clear(zone_color);
@@ -280,6 +281,15 @@ void Display::update_status(bool connected, uint16_t power, Color zone_color) {
 
     // Draw "WATTS"
     text("WATTS", 80, 20, text_color, 2);
+
+    // Draw FTP if enabled (Top Right)
+    if (show_ftp) {
+      char ftp_buf[16];
+      sprintf(ftp_buf, "FTP: %d", ftp);
+      // Align top right. Width ~8 chars * 6 * 2 (scale 2) = 96px
+      // x = 240 - 96 - 5 = ~139
+      text(ftp_buf, 140, 5, text_color, 2);
+    }
 
     // Draw Power Number (Large)
     char buf[16];

@@ -11,7 +11,7 @@ public:
   void fill(Color color);
   void clear();
   void startup_cycle();
-  Color update_from_power(uint16_t power);
+  Color update_from_power(uint16_t power, uint16_t ftp);
   void flash_green();
 
 private:

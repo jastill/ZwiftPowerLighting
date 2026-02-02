@@ -21,12 +21,14 @@ public:
   // Internal use (public so C-style callbacks can reach them)
   void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet,
                       uint16_t size);
+  void check_watchdog();
 
 private:
   PowerCallback power_callback;
   ScanCallback scan_callback;
   bool connected;
   hci_con_handle_t connection_handle;
+  uint32_t last_notification_ms;
 
   // GATT Handles
   gatt_client_service_t service;
