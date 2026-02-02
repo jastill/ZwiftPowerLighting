@@ -7,8 +7,10 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.env")
         if("${NameVar}" MATCHES "^([^=]+)=(.*)$")
             set(ENV_VAR_NAME "${CMAKE_MATCH_1}")
             set(ENV_VAR_VALUE "${CMAKE_MATCH_2}")
+            # Strip quotes if present (optional but good safety)
+            string(REPLACE "\"" "" ENV_VAR_VALUE "${ENV_VAR_VALUE}")
             add_compile_definitions(${ENV_VAR_NAME}="${ENV_VAR_VALUE}")
-            message(STATUS "Loaded from .env: ${ENV_VAR_NAME}")
+            message(STATUS "Loaded from .env: ${ENV_VAR_NAME}=${ENV_VAR_VALUE}")
         endif()
     endforeach()
 else()
@@ -30,6 +32,7 @@ add_executable(ZwiftPowerLighting
     leds.cpp
     display.cpp
     ble_client.cpp
+    hue_client.cpp
 )
 
 # Generate PIO header

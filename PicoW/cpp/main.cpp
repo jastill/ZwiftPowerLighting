@@ -1,6 +1,7 @@
 #include "ble_client.hpp"
 #include "btstack_run_loop.h"
 #include "display.hpp"
+#include "hue_client.hpp"
 #include "leds.hpp"
 #include "pico/cyw43_arch.h"
 #include "pico/stdlib.h"
@@ -11,6 +12,7 @@
 LEDController leds;
 Display display;
 BLEClient client;
+HueClient hue;
 
 static btstack_timer_source_t heartbeat;
 static uint16_t last_power = 0;
@@ -47,6 +49,11 @@ void on_power_update(uint16_t raw_power) {
 
   Color zone_color = leds.update_from_power(avg_power);
   display.update_status(true, avg_power, zone_color);
+
+  // Update Hue
+  cyw43_arch_lwip_begin();
+  hue.update(zone_color);
+  cyw43_arch_lwip_end();
 }
 
 void on_scan_result(const char *mac, const char *name) {
@@ -63,7 +70,7 @@ void on_scan_result(const char *mac, const char *name) {
 int main() {
   stdio_init_all();
   sleep_ms(5000); // Wait for USB serial
-  printf("ZwiftPowerLighting C++ Starting...\n");
+  printf("ZwiftPowerLighting C++ Starting... VERSION 2.0 (STABLE)\n");
 
   // Initialize CYW43 (Required for WiFi/BT)
   if (cyw43_arch_init()) {
@@ -74,12 +81,14 @@ int main() {
   // WiFi Connection
   cyw43_arch_enable_sta_mode();
   printf("Connecting to WiFi: %s...\n", WIFI_SSID);
-  if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD,
-                                         CYW43_AUTH_WPA2_AES_PSK, 10000)) {
-    printf("WiFi Connection Failed!\n");
+  int res = cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD,
+                                               CYW43_AUTH_WPA2_AES_PSK, 15000);
+  if (res) {
+    printf("WiFi Connection Failed! Error: %d\n", res);
     // Continue anyway? Or halt? Let's continue but log error.
   } else {
     printf("WiFi Connected!\n");
+    hue.init();
   }
 
   // 1. Initialize
