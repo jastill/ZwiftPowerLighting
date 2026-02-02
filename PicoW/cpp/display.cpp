@@ -104,7 +104,23 @@ void Display::init() {
   write_command(0x13); // NORON
   write_command(0x29); // DISPON
 
+  // Allocate 64KB Buffer
+  framebuffer = (uint16_t *)malloc(DISPLAY_WIDTH * DISPLAY_HEIGHT * 2);
+  if (!framebuffer) {
+    printf("Display: Failed to allocate framebuffer!\n");
+  } else {
+    memset(framebuffer, 0, DISPLAY_WIDTH * DISPLAY_HEIGHT * 2);
+  }
+
   clear();
+  update();
+}
+
+void Display::update() {
+  if (!framebuffer)
+    return;
+  set_window(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+  write_data((uint8_t *)framebuffer, DISPLAY_WIDTH * DISPLAY_HEIGHT * 2);
 }
 
 void Display::write_command(uint8_t cmd) {
@@ -164,17 +180,19 @@ void Display::fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
   if (y + h > DISPLAY_HEIGHT)
     h = DISPLAY_HEIGHT - y;
 
-  set_window(x, y, w, h);
+  if (!framebuffer)
+    return;
 
   uint16_t c = color565(color);
-  uint8_t data[2] = {(uint8_t)(c >> 8), (uint8_t)(c & 0xFF)};
+  // Swap bytes because Pico is Little Endian but Display wants Big Endian (MSB
+  // first) when sent as byte stream.
+  uint16_t swapped = (c >> 8) | (c << 8);
 
-  gpio_put(PIN_DC, 1);
-  gpio_put(PIN_CS, 0);
-  for (int i = 0; i < w * h; i++) {
-    spi_write_blocking(spi_default, data, 2);
+  for (uint16_t j = 0; j < h; j++) {
+    for (uint16_t i = 0; i < w; i++) {
+      framebuffer[(y + j) * DISPLAY_WIDTH + (x + i)] = swapped;
+    }
   }
-  gpio_put(PIN_CS, 1);
 }
 
 void Display::draw_char(char c, uint16_t x, uint16_t y, Color color,
@@ -310,8 +328,13 @@ void Display::update_status(bool connected, uint16_t power, Color zone_color,
     // Scanning Mode (Black Background)
     clear({0, 0, 0});
     text("SCANNING...", 10, 10, {255, 0, 0}, 3);
-    draw_logs();
+    // Draw logs handles its own text drawing
   }
+
+  if (!connected)
+    draw_logs(); // Draw logs on top of scanning screen
+
+  update(); // <--- FLUSH TO SCREEN
 }
 
 void Display::add_log_line(const char *msg) {
@@ -325,13 +348,13 @@ void Display::add_log_line(const char *msg) {
 void Display::draw_logs() {
   uint16_t start_y = 50;
   // clear log area (y=50 to bottom)
-  // Note: status text is at y=50 usually (Power: ...), but only when connected.
-  // When scanning, we can use that space.
-  // Let's assume logs are only relevant when scanning.
-
   fill_rect(0, start_y, DISPLAY_WIDTH, DISPLAY_HEIGHT - start_y, {0, 0, 0});
 
   for (size_t i = 0; i < log_lines.size(); i++) {
     text(log_lines[i].c_str(), 5, start_y + (i * 10), {200, 200, 200}, 1);
   }
+  // Note: draw_logs is usually called inside update_status when !connected,
+  // so update() will be called there. If called linearly (e.g. init),
+  // explicit update() might be needed, but for the flickering issue (dynamic
+  // updates), handling it in update_status is sufficient.
 }

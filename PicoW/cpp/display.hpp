@@ -38,4 +38,7 @@ private:
   std::vector<std::string> log_lines;
   const size_t MAX_LOG_LINES = 5;
   std::deque<uint16_t> power_history;
+
+  uint16_t *framebuffer;
+  void update(); // Flush buffer to screen
 };
