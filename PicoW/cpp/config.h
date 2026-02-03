@@ -26,6 +26,10 @@ constexpr uint PIN_BUTTON_B = 13;
 constexpr uint PIN_BUTTON_X = 14;
 constexpr uint PIN_BUTTON_Y = 15;
 
+constexpr uint PIN_LED_R = 6;
+constexpr uint PIN_LED_G = 7;
+constexpr uint PIN_LED_B = 8;
+
 // Bluetooth Configuration
 const std::string BLE_TARGET_NAME = "KICKR CORE 5D21";
 

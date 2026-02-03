@@ -19,6 +19,7 @@ public:
                      bool show_ftp, uint16_t ftp, bool hue_enabled);
   void add_log_line(const char *msg);
   void draw_logs();
+  void set_led(Color color);
 
   // Basic drawing primitives
   void fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, Color color);

@@ -87,6 +87,7 @@ void on_power_update(uint16_t raw_power) {
   Color zone_color = leds.update_from_power(avg_power, current_ftp);
   display.update_status(true, avg_power, zone_color, show_ftp, current_ftp,
                         hue_enabled);
+  display.set_led(zone_color);
 
   // Update Hue
   if (hue_enabled) {

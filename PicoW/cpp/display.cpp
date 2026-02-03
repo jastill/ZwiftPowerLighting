@@ -1,4 +1,5 @@
 #include "display.hpp"
+#include "hardware/pwm.h"
 #include <cstdio>
 #include <cstring>
 
@@ -114,6 +115,41 @@ void Display::init() {
 
   clear();
   update();
+
+  // Initialize RGB LED (PWM)
+  // R=6, G=7, B=8
+  gpio_set_function(PIN_LED_R, GPIO_FUNC_PWM);
+  gpio_set_function(PIN_LED_G, GPIO_FUNC_PWM);
+  gpio_set_function(PIN_LED_B, GPIO_FUNC_PWM);
+
+  uint slice_r = pwm_gpio_to_slice_num(PIN_LED_R);
+  uint slice_g = pwm_gpio_to_slice_num(PIN_LED_G);
+  uint slice_b = pwm_gpio_to_slice_num(PIN_LED_B);
+
+  // Set wrap to 255 for easy 8-bit color mapping
+  pwm_set_wrap(slice_r, 255);
+  pwm_set_wrap(slice_g, 255);
+  pwm_set_wrap(slice_b, 255);
+
+  pwm_set_enabled(slice_r, true);
+  pwm_set_enabled(slice_g, true);
+  pwm_set_enabled(slice_b, true);
+
+  // Default Off (Active Low -> 255)
+  set_led({0, 0, 0});
+}
+
+void Display::set_led(Color color) {
+  // LEDs are Active Low for Pimoroni Display
+  // 255 = Off, 0 = Full On
+  // User requested 80% brightness scaling
+  uint8_t r = (color.r * 80) / 100;
+  uint8_t g = (color.g * 80) / 100;
+  uint8_t b = (color.b * 80) / 100;
+
+  pwm_set_gpio_level(PIN_LED_R, 255 - r);
+  pwm_set_gpio_level(PIN_LED_G, 255 - g);
+  pwm_set_gpio_level(PIN_LED_B, 255 - b);
 }
 
 void Display::update() {
