@@ -50,23 +50,49 @@ struct Button {
 Button btn_a, btn_b, btn_x, btn_y;
 
 // Smoothing Buffer (Size 3 for approx 1s smoothing if ~3Hz updates)
-// Smoothing Buffer (Size 3 for approx 1s smoothing if ~3Hz updates)
 static std::deque<uint16_t> power_history;
 static const size_t SMOOTHING_WINDOW = 3;
+
+static uint32_t btn_x_press_start = 0;
+static bool btn_x_handled = false;
+
+// Auto-Repeat State
+static uint32_t btn_a_press_start = 0;
+static uint32_t btn_b_press_start = 0;
+static uint32_t last_repeat_time = 0;
+
+// Auto-Off State
+static uint32_t last_active_power_time = 0;
+static bool hue_auto_off_sent = false;
 
 void heartbeat_handler(btstack_timer_source_t *ts) {
   if (client.is_connected()) {
     printf("[Status] Connected | Power: %d W | FTP: %d\n", last_power,
            current_ftp);
     client.check_watchdog();
+
+    // Auto Hue Off (60s timeout)
+    if (hue_enabled && !hue_auto_off_sent && last_power == 0) {
+      uint32_t now = to_ms_since_boot(get_absolute_time());
+      // Initialize last_active if 0 (first run)
+      if (last_active_power_time == 0)
+        last_active_power_time = now;
+
+      if (now - last_active_power_time > 60000) {
+        printf("[Auto] Hue Timeout > 60s. Turning Off.\n");
+        cyw43_arch_lwip_begin();
+        hue.turn_off();
+        cyw43_arch_lwip_end();
+        hue_auto_off_sent = true;
+        display.set_led({0, 0, 0}); // Sync LED Off
+      }
+    }
   } else {
     // printf("[Status] Scanning...\n");
   }
   btstack_run_loop_set_timer(ts, 1000);
   btstack_run_loop_add_timer(ts);
 }
-
-// ...
 
 void on_power_update(uint16_t raw_power) {
   // Add to buffer
@@ -82,12 +108,24 @@ void on_power_update(uint16_t raw_power) {
   uint16_t avg_power = sum / power_history.size();
 
   last_power = avg_power;
+
+  if (avg_power > 0) {
+    last_active_power_time = to_ms_since_boot(get_absolute_time());
+    hue_auto_off_sent = false;
+  }
+
   printf("Power: %d W (Raw: %d)\n", avg_power, raw_power);
 
   Color zone_color = leds.update_from_power(avg_power, current_ftp);
   display.update_status(true, avg_power, zone_color, show_ftp, current_ftp,
                         hue_enabled);
-  display.set_led(zone_color);
+
+  // Gate LED Control matches Hue State
+  if (hue_enabled && !hue_auto_off_sent) {
+    display.set_led(zone_color);
+  } else {
+    display.set_led({0, 0, 0});
+  }
 
   // Update Hue
   if (hue_enabled) {
@@ -96,14 +134,6 @@ void on_power_update(uint16_t raw_power) {
     cyw43_arch_lwip_end();
   }
 }
-
-static uint32_t btn_x_press_start = 0;
-static bool btn_x_handled = false;
-
-// Auto-Repeat State
-static uint32_t btn_a_press_start = 0;
-static uint32_t btn_b_press_start = 0;
-static uint32_t last_repeat_time = 0;
 
 void ui_handler(btstack_timer_source_t *ts) {
   // Poll Buttons
@@ -175,11 +205,19 @@ void ui_handler(btstack_timer_source_t *ts) {
         // Long Press Triggered
         hue_enabled = !hue_enabled;
         printf("UI: Hue Toggle -> %d\n", hue_enabled);
+
+        cyw43_arch_lwip_begin();
         if (!hue_enabled) {
-          cyw43_arch_lwip_begin();
           hue.turn_off();
-          cyw43_arch_lwip_end();
+          display.set_led({0, 0, 0}); // Sync LED Off
+        } else {
+          // Immediate Wake with current settings
+          Color zone_color = leds.update_from_power(last_power, current_ftp);
+          hue.update(zone_color);
+          display.set_led(zone_color); // Sync LED On
         }
+        cyw43_arch_lwip_end();
+
         btn_x_handled = true;
         changed = true;
       }
@@ -197,8 +235,7 @@ void ui_handler(btstack_timer_source_t *ts) {
                           hue_enabled);
   }
 
-  btstack_run_loop_set_timer(
-      ts, 20); // Poll at 50Hz (20ms) to support 20ms repeat rate
+  btstack_run_loop_set_timer(ts, 20); // Poll at 50Hz (20ms)
   btstack_run_loop_add_timer(ts);
 }
 
