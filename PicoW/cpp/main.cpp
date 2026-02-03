@@ -99,6 +99,11 @@ void on_power_update(uint16_t raw_power) {
 static uint32_t btn_x_press_start = 0;
 static bool btn_x_handled = false;
 
+// Auto-Repeat State
+static uint32_t btn_a_press_start = 0;
+static uint32_t btn_b_press_start = 0;
+static uint32_t last_repeat_time = 0;
+
 void ui_handler(btstack_timer_source_t *ts) {
   // Poll Buttons
   if (btn_y.just_pressed()) {
@@ -107,27 +112,64 @@ void ui_handler(btstack_timer_source_t *ts) {
   }
 
   bool changed = false;
+  uint32_t now = to_ms_since_boot(get_absolute_time());
+
   if (show_ftp) {
+    // --- Button A (Decrement) ---
     if (btn_a.just_pressed()) {
-      current_ftp++;
+      if (current_ftp > 1)
+        current_ftp--; // Single click min 1
       changed = true;
+      btn_a_press_start = now;
+      printf("UI: FTP -1 -> %d\n", current_ftp);
+    }
+
+    if (btn_a.is_pressed()) {
+      if (btn_a_press_start > 0 && (now - btn_a_press_start > 1000)) {
+        // Auto Decrement
+        if (now - last_repeat_time >= 20) {
+          if (current_ftp > 50) { // Auto min 50
+            current_ftp--;
+            changed = true;
+          }
+          last_repeat_time = now;
+        }
+      }
+    } else {
+      btn_a_press_start = 0;
+    }
+
+    // --- Button B (Increment) ---
+    if (btn_b.just_pressed()) {
+      if (current_ftp < 8000)
+        current_ftp++; // Single click max 8000
+      changed = true;
+      btn_b_press_start = now;
       printf("UI: FTP +1 -> %d\n", current_ftp);
     }
-    if (btn_b.just_pressed()) {
-      if (current_ftp > 0)
-        current_ftp--;
-      changed = true;
-      printf("UI: FTP -1 -> %d\n", current_ftp);
+
+    if (btn_b.is_pressed()) {
+      if (btn_b_press_start > 0 && (now - btn_b_press_start > 1000)) {
+        // Auto Increment
+        if (now - last_repeat_time >= 20) {
+          if (current_ftp < 8000) { // Auto max 8000
+            current_ftp++;
+            changed = true;
+          }
+          last_repeat_time = now;
+        }
+      }
+    } else {
+      btn_b_press_start = 0;
     }
   }
 
   // Button X Long Press Logic (Hue Toggle)
   if (btn_x.is_pressed()) {
     if (btn_x_press_start == 0) {
-      btn_x_press_start = to_ms_since_boot(get_absolute_time());
+      btn_x_press_start = now;
       btn_x_handled = false;
     } else {
-      uint32_t now = to_ms_since_boot(get_absolute_time());
       if (!btn_x_handled && (now - btn_x_press_start > 2000)) {
         // Long Press Triggered
         hue_enabled = !hue_enabled;
@@ -154,7 +196,8 @@ void ui_handler(btstack_timer_source_t *ts) {
                           hue_enabled);
   }
 
-  btstack_run_loop_set_timer(ts, 50); // 20Hz polling
+  btstack_run_loop_set_timer(
+      ts, 20); // Poll at 50Hz (20ms) to support 20ms repeat rate
   btstack_run_loop_add_timer(ts);
 }
 
