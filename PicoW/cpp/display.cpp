@@ -256,10 +256,16 @@ void Display::draw_line(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1,
 }
 
 void Display::update_status(bool connected, uint16_t power, Color zone_color,
-                            bool show_ftp, uint16_t ftp) {
+                            bool show_ftp, uint16_t ftp, bool hue_enabled) {
   if (connected) {
     // Fill screen with zone color
     clear(zone_color);
+
+    // Hue Disabled Indicator (Red Square Top Left)
+    if (!hue_enabled) {
+      fill_rect(5, 5, 20, 20, {255, 0, 0});
+      text("OFF", 6, 11, {255, 255, 255}, 1);
+    }
 
     // Determine text color for contrast
     uint32_t brightness =

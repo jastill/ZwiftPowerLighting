@@ -20,6 +20,7 @@ static btstack_timer_source_t ui_timer;
 static uint16_t last_power = 0;
 static uint16_t current_ftp = DEFAULT_FTP;
 static bool show_ftp = false;
+static bool hue_enabled = true; // Default ON
 
 // Button State Tracking (Simple Polling)
 struct Button {
@@ -49,6 +50,7 @@ struct Button {
 Button btn_a, btn_b, btn_x, btn_y;
 
 // Smoothing Buffer (Size 3 for approx 1s smoothing if ~3Hz updates)
+// Smoothing Buffer (Size 3 for approx 1s smoothing if ~3Hz updates)
 static std::deque<uint16_t> power_history;
 static const size_t SMOOTHING_WINDOW = 3;
 
@@ -63,6 +65,8 @@ void heartbeat_handler(btstack_timer_source_t *ts) {
   btstack_run_loop_set_timer(ts, 1000);
   btstack_run_loop_add_timer(ts);
 }
+
+// ...
 
 void on_power_update(uint16_t raw_power) {
   // Add to buffer
@@ -81,13 +85,19 @@ void on_power_update(uint16_t raw_power) {
   printf("Power: %d W (Raw: %d)\n", avg_power, raw_power);
 
   Color zone_color = leds.update_from_power(avg_power, current_ftp);
-  display.update_status(true, avg_power, zone_color, show_ftp, current_ftp);
+  display.update_status(true, avg_power, zone_color, show_ftp, current_ftp,
+                        hue_enabled);
 
   // Update Hue
-  cyw43_arch_lwip_begin();
-  hue.update(zone_color);
-  cyw43_arch_lwip_end();
+  if (hue_enabled) {
+    cyw43_arch_lwip_begin();
+    hue.update(zone_color);
+    cyw43_arch_lwip_end();
+  }
 }
+
+static uint32_t btn_x_press_start = 0;
+static bool btn_x_handled = false;
 
 void ui_handler(btstack_timer_source_t *ts) {
   // Poll Buttons
@@ -111,11 +121,37 @@ void ui_handler(btstack_timer_source_t *ts) {
     }
   }
 
+  // Button X Long Press Logic (Hue Toggle)
+  if (btn_x.is_pressed()) {
+    if (btn_x_press_start == 0) {
+      btn_x_press_start = to_ms_since_boot(get_absolute_time());
+      btn_x_handled = false;
+    } else {
+      uint32_t now = to_ms_since_boot(get_absolute_time());
+      if (!btn_x_handled && (now - btn_x_press_start > 2000)) {
+        // Long Press Triggered
+        hue_enabled = !hue_enabled;
+        printf("UI: Hue Toggle -> %d\n", hue_enabled);
+        if (!hue_enabled) {
+          cyw43_arch_lwip_begin();
+          hue.turn_off();
+          cyw43_arch_lwip_end();
+        }
+        btn_x_handled = true;
+        changed = true;
+      }
+    }
+  } else {
+    btn_x_press_start = 0;
+    btn_x_handled = false;
+  }
+
   // Force display update if UI changed and we are connected (so the screen is
   // active)
   if (changed || (btn_y.just_pressed() && client.is_connected())) {
     Color zone_color = leds.update_from_power(last_power, current_ftp);
-    display.update_status(true, last_power, zone_color, show_ftp, current_ftp);
+    display.update_status(true, last_power, zone_color, show_ftp, current_ftp,
+                          hue_enabled);
   }
 
   btstack_run_loop_set_timer(ts, 50); // 20Hz polling

@@ -13,6 +13,7 @@ public:
   HueClient();
   void init();
   void update(Color color);
+  void turn_off();
   void on_request_complete() { request_in_progress = false; }
 
 private:

@@ -117,6 +117,12 @@ void HueClient::update(Color color) {
   send_request(hue_api, sat_api, bri_api);
 }
 
+void HueClient::turn_off() {
+  printf("[Hue] Turning OFF.\n");
+  // send_request with brightness 0 triggers {"on":false} logic in send_request
+  send_request(0, 0, 0);
+}
+
 void HueClient::send_request(uint16_t hue, uint8_t sat, uint8_t bri) {
   struct tcp_pcb *pcb = tcp_new();
   if (!pcb) {
