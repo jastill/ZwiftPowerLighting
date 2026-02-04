@@ -1,6 +1,8 @@
 # ZwiftPowerLighting
 Make my zwift setup light up with the power
 
+![F822EC98-533F-4C9F-9171-1F8039DD14D0_1_105_c](https://github.com/user-attachments/assets/0fef23d2-81ad-4663-85b0-59e3f1eba43f)
+
 ## Goals
 
 The goals here is to create a bridge using a microcontroller to connect to Zwift and control my lights based on the power output. 
