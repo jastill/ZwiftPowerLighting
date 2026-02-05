@@ -41,8 +41,6 @@
 /Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/hardware_structs/CMakeFiles/edit_cache.dir
 /Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/hardware_structs/CMakeFiles/rebuild_cache.dir
 /Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/boot_stage2/CMakeFiles/bs2_default.dir
-/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/boot_stage2/CMakeFiles/picotoolForceReconfigure.dir
-/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/boot_stage2/CMakeFiles/picotoolBuild.dir
 /Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/boot_stage2/CMakeFiles/bs2_default_bin.dir
 /Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/boot_stage2/CMakeFiles/bs2_default_library.dir
 /Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/boot_stage2/CMakeFiles/edit_cache.dir
@@ -171,7 +169,6 @@
 /Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2_common/pico_async_context/CMakeFiles/rebuild_cache.dir
 /Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2_common/pico_btstack/CMakeFiles/edit_cache.dir
 /Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2_common/pico_btstack/CMakeFiles/rebuild_cache.dir
-/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2_common/pico_cyw43_driver/CMakeFiles/pioasmBuild.dir
 /Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2_common/pico_cyw43_driver/CMakeFiles/cyw43_driver_picow_cyw43_bus_pio_spi_pio_h.dir
 /Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2_common/pico_cyw43_driver/CMakeFiles/edit_cache.dir
 /Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2_common/pico_cyw43_driver/CMakeFiles/rebuild_cache.dir
