@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/boot_stage2/CMakeFiles/picotoolBuild"
+		},
+		{
+			"file" : "/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/boot_stage2/CMakeFiles/picotoolBuild.rule"
+		},
+		{
+			"file" : "/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/boot_stage2/CMakeFiles/picotoolBuild-complete.rule"
+		},
+		{
+			"file" : "/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-build.rule"
+		},
+		{
+			"file" : "/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-configure.rule"
+		},
+		{
+			"file" : "/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-download.rule"
+		},
+		{
+			"file" : "/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-install.rule"
+		},
+		{
+			"file" : "/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-mkdir.rule"
+		},
+		{
+			"file" : "/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-patch.rule"
+		},
+		{
+			"file" : "/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-test.rule"
+		},
+		{
+			"file" : "/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"picotoolBuild"
+		],
+		"name" : "picotoolBuild"
+	}
+}

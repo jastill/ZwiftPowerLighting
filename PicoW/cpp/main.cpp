@@ -49,9 +49,9 @@ struct Button {
 
 Button btn_a, btn_b, btn_x, btn_y;
 
-// Smoothing Buffer (Size 3 for approx 1s smoothing if ~3Hz updates)
+// Smoothing Buffer (Size 5 for approx 1.5s smoothing if ~3Hz updates)
 static std::deque<uint16_t> power_history;
-static const size_t SMOOTHING_WINDOW = 3;
+static const size_t SMOOTHING_WINDOW = 5;
 
 static uint32_t btn_x_press_start = 0;
 static bool btn_x_handled = false;

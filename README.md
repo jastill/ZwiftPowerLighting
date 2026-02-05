@@ -23,6 +23,18 @@ Create code for a Raspberry Pi Pico W to read the power from the power trainer a
 
 Read the power output from the trainer and control the lights based on the power output using the colors in the Power Zones.
 
+### Building for Raspberry Pi Pico W (RP2040)
+1. `cd PicoW/cpp`
+2. `mkdir build && cd build`
+3. `cmake ..`
+4. `make`
+
+### Building for Raspberry Pi Pico 2 W (RP2350)
+**Requirements:** Pico SDK v2.0.0 or later.
+1. `cd PicoW/cpp`
+2. `./build_pico2w.sh`
+   - Or manually: `cmake -DPICO_BOARD=pico2_w ..` then `make`
+
 The code can be either micro python or C++.
 
 ## Components

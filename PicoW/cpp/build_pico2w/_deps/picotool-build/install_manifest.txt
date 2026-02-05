@@ -1,0 +1,7 @@
+/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/_deps/picotool/picotool
+/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/_deps/picotool/picotoolTargets.cmake
+/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/_deps/picotool/picotoolTargets-release.cmake
+/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/_deps/picotool/picotoolConfig.cmake
+/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/_deps/picotool/picotoolConfigVersion.cmake
+/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/_deps/picotool/enc_bootloader.elf
+/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/_deps/picotool/enc_bootloader_mbedtls.elf
