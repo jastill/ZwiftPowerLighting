@@ -140,6 +140,7 @@ vite.config.ts.timestamp-*
 
 # PicoW C++ Project
 PicoW/cpp/build/
+PicoW/cpp/build_pico2w/
 *.uf2
 *.elf
 *.bin
