@@ -46,12 +46,12 @@ The code can be either micro python or C++.
 
 There are 6 power zones in Zwift. 
 
-1- < 60% White
-2- 60-75% Blue
-3- 76-89% Green
-4- 90-104% Yellow
-5- 105-118% Orange
-6- > 118% Red
+Zone 1 (White, Recovery): below 60%
+Zone 2 (Blue, Endurance): 60-75%
+Zone 3 (Green, Tempo): 76-89%
+Zone 4 (Yellow, Threshold): 90-104%
+Zone 5 (Orange, VO2 Max): 105-118%
+Zone 6 (Red, Anaerobic): above 118%
 
 ## Sequence
 
