@@ -15,8 +15,9 @@ public:
   void clear(Color color = {0, 0, 0});
   void text(const char *msg, uint16_t x, uint16_t y,
             Color color = {255, 255, 255}, uint8_t scale = 1);
-  void update_status(bool connected, uint16_t power, Color zone_color,
-                     bool show_ftp, uint16_t ftp, bool hue_enabled);
+  void update_status(bool connected, bool wifi_connected, uint16_t power,
+                     Color zone_color, bool show_ftp, uint16_t ftp,
+                     bool hue_enabled);
   void add_log_line(const char *msg);
   void draw_logs();
   void set_led(Color color);
@@ -35,6 +36,9 @@ private:
   uint16_t color565(Color color);
 
   void draw_char(char c, uint16_t x, uint16_t y, Color color, uint8_t scale);
+  void fill_circle(int16_t cx, int16_t cy, int16_t r, Color color);
+  void draw_icon(const uint8_t *bitmap, uint8_t width, uint8_t height,
+                 uint16_t x, uint16_t y, Color color, uint8_t scale);
 
   std::vector<std::string> log_lines;
   const size_t MAX_LOG_LINES = 5;

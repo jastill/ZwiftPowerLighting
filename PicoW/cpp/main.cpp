@@ -117,8 +117,10 @@ void on_power_update(uint16_t raw_power) {
   printf("Power: %d W (Raw: %d)\n", avg_power, raw_power);
 
   Color zone_color = leds.update_from_power(avg_power, current_ftp);
-  display.update_status(true, avg_power, zone_color, show_ftp, current_ftp,
-                        hue_enabled);
+  bool wifi_up =
+      cyw43_tcpip_link_status(&cyw43_state, CYW43_ITF_STA) == CYW43_LINK_UP;
+  display.update_status(true, wifi_up, avg_power, zone_color, show_ftp,
+                        current_ftp, hue_enabled);
 
   // Gate LED Control matches Hue State
   if (hue_enabled && !hue_auto_off_sent) {
@@ -231,8 +233,10 @@ void ui_handler(btstack_timer_source_t *ts) {
   // active)
   if (changed || (btn_y.just_pressed() && client.is_connected())) {
     Color zone_color = leds.update_from_power(last_power, current_ftp);
-    display.update_status(true, last_power, zone_color, show_ftp, current_ftp,
-                          hue_enabled);
+    bool wifi_up =
+        cyw43_tcpip_link_status(&cyw43_state, CYW43_ITF_STA) == CYW43_LINK_UP;
+    display.update_status(true, wifi_up, last_power, zone_color, show_ftp,
+                          current_ftp, hue_enabled);
   }
 
   btstack_run_loop_set_timer(ts, 20); // Poll at 50Hz (20ms)

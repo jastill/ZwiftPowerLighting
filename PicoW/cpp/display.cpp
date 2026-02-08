@@ -1,5 +1,6 @@
 #include "display.hpp"
 #include "hardware/pwm.h"
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 
@@ -64,6 +65,28 @@ static const uint8_t font[] = {
     0x63, 0x14, 0x08, 0x14, 0x63, // X
     0x07, 0x08, 0x70, 0x08, 0x07, // Y
     0x61, 0x51, 0x49, 0x45, 0x43, // Z
+};
+
+// Bluetooth icon (5 wide x 9 tall), 1 byte per row, MSB-left
+static const uint8_t bt_icon[] = {
+    0x04, // ..#..
+    0x06, // ..##.
+    0x15, // #.#.#
+    0x0C, // .##..
+    0x04, // ..#..
+    0x0C, // .##..
+    0x15, // #.#.#
+    0x06, // ..##.
+    0x04, // ..#..
+};
+
+// WiFi icon (7 wide x 5 tall), 1 byte per row, MSB-left
+static const uint8_t wifi_icon[] = {
+    0x3E, // .#####.
+    0x41, // #.....#
+    0x1C, // ..###..
+    0x22, // .#...#.
+    0x08, // ...#...
 };
 
 Display::Display() {}
@@ -291,16 +314,56 @@ void Display::draw_line(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1,
   }
 }
 
-void Display::update_status(bool connected, uint16_t power, Color zone_color,
-                            bool show_ftp, uint16_t ftp, bool hue_enabled) {
+void Display::fill_circle(int16_t cx, int16_t cy, int16_t r, Color color) {
+  for (int16_t dy = -r; dy <= r; dy++) {
+    int16_t half_w = (int16_t)sqrtf((float)(r * r - dy * dy));
+    int16_t x0 = cx - half_w;
+    int16_t y0 = cy + dy;
+    int16_t w = half_w * 2 + 1;
+    if (y0 < 0 || y0 >= DISPLAY_HEIGHT)
+      continue;
+    if (x0 < 0) {
+      w += x0;
+      x0 = 0;
+    }
+    if (w <= 0)
+      continue;
+    fill_rect(x0, y0, w, 1, color);
+  }
+}
+
+void Display::draw_icon(const uint8_t *bitmap, uint8_t width, uint8_t height,
+                        uint16_t x, uint16_t y, Color color, uint8_t scale) {
+  for (uint8_t row = 0; row < height; row++) {
+    uint8_t bits = bitmap[row];
+    for (uint8_t col = 0; col < width; col++) {
+      if (bits & (1 << (width - 1 - col))) {
+        fill_rect(x + col * scale, y + row * scale, scale, scale, color);
+      }
+    }
+  }
+}
+
+void Display::update_status(bool connected, bool wifi_connected, uint16_t power,
+                            Color zone_color, bool show_ftp, uint16_t ftp,
+                            bool hue_enabled) {
   if (connected) {
     // Fill screen with zone color
     clear(zone_color);
 
-    // Hue Disabled Indicator (Red Square Top Left)
+    // BT icon: white circle background + green icon (connected)
+    fill_circle(12, 12, 11, {255, 255, 255});
+    draw_icon(bt_icon, 5, 9, 7, 3, {0, 200, 0}, 2);
+
+    // WiFi icon: white circle background + green/red based on state
+    Color wifi_color = wifi_connected ? Color{0, 200, 0} : Color{200, 0, 0};
+    fill_circle(36, 12, 9, {255, 255, 255});
+    draw_icon(wifi_icon, 7, 5, 29, 7, wifi_color, 2);
+
+    // Hue Disabled Indicator (moved right of icons)
     if (!hue_enabled) {
-      fill_rect(5, 5, 20, 20, {255, 0, 0});
-      text("OFF", 6, 11, {255, 255, 255}, 1);
+      fill_rect(50, 3, 20, 20, {255, 0, 0});
+      text("OFF", 51, 9, {255, 255, 255}, 1);
     }
 
     // Determine text color for contrast
@@ -369,7 +432,17 @@ void Display::update_status(bool connected, uint16_t power, Color zone_color,
   } else {
     // Scanning Mode (Black Background)
     clear({0, 0, 0});
-    text("SCANNING...", 10, 10, {255, 0, 0}, 3);
+
+    // BT icon: white circle background + red icon (disconnected)
+    fill_circle(12, 12, 11, {255, 255, 255});
+    draw_icon(bt_icon, 5, 9, 7, 3, {200, 0, 0}, 2);
+
+    // WiFi icon: white circle background + green/red based on state
+    Color wifi_color = wifi_connected ? Color{0, 200, 0} : Color{200, 0, 0};
+    fill_circle(36, 12, 9, {255, 255, 255});
+    draw_icon(wifi_icon, 7, 5, 29, 7, wifi_color, 2);
+
+    text("SCANNING...", 10, 30, {255, 0, 0}, 3);
     // Draw logs handles its own text drawing
   }
 
@@ -388,8 +461,8 @@ void Display::add_log_line(const char *msg) {
 }
 
 void Display::draw_logs() {
-  uint16_t start_y = 50;
-  // clear log area (y=50 to bottom)
+  uint16_t start_y = 55;
+  // clear log area (y=55 to bottom)
   fill_rect(0, start_y, DISPLAY_WIDTH, DISPLAY_HEIGHT - start_y, {0, 0, 0});
 
   for (size_t i = 0; i < log_lines.size(); i++) {
