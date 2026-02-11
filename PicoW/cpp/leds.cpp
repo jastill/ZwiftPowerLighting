@@ -33,10 +33,23 @@ void LEDController::clear() { fill({0, 0, 0}); }
 
 void LEDController::startup_cycle() {
   printf("Starting LED cycle...\n");
-  for (const auto &zone : POWER_ZONES) {
-    fill(zone.color);
-    sleep_ms(500);
+
+  // Progressively light each LED with its zone color
+  for (size_t step = 0; step < POWER_ZONES.size() && step < NUM_LEDS; ++step) {
+    for (size_t i = 0; i <= step; ++i) {
+      put_pixel(urgb_u32(POWER_ZONES[i].color.r, POWER_ZONES[i].color.g,
+                          POWER_ZONES[i].color.b));
+    }
+    // Fill remaining LEDs with off
+    for (size_t i = step + 1; i < NUM_LEDS; ++i) {
+      put_pixel(0);
+    }
+    sleep_us(50);
+    sleep_ms(300);
   }
+
+  // Hold all zone colors for a moment
+  sleep_ms(500);
   clear();
 }
 

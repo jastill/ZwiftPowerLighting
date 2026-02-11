@@ -6,7 +6,7 @@
 
 // Hardware Configuration
 constexpr uint LED_PIN = 28;
-constexpr uint NUM_LEDS = 30;
+constexpr uint NUM_LEDS = 6;
 
 // Display Pins (Pimoroni Pico Display)
 constexpr uint DISPLAY_WIDTH = 240;
