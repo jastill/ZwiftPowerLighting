@@ -9,7 +9,7 @@ LEDController::LEDController() {
 
 void LEDController::init() {
   uint offset = pio_add_program(pio, &ws2812_program);
-  ws2812_program_init(pio, sm, offset, LED_PIN, 800000, false);
+  ws2812_program_init(pio, sm, offset, LED_PIN, 800000, true);
   clear();
 }
 
@@ -26,7 +26,7 @@ void LEDController::fill(Color color) {
   for (int i = 0; i < NUM_LEDS; ++i) {
     put_pixel(pixel);
   }
-  sleep_us(50); // Reset time
+  sleep_us(500); // Wait for PIO FIFO to drain + WS2812 reset
 }
 
 void LEDController::clear() { fill({0, 0, 0}); }
