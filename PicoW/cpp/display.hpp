@@ -17,7 +17,7 @@ public:
             Color color = {255, 255, 255}, uint8_t scale = 1);
   void update_status(bool connected, bool wifi_connected, uint16_t power,
                      Color zone_color, bool show_ftp, uint16_t ftp,
-                     bool hue_enabled);
+                     bool hue_enabled, bool hue_reachable);
   void add_log_line(const char *msg);
   void draw_logs();
   void set_led(Color color);

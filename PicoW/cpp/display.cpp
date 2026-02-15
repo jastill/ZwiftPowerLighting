@@ -89,6 +89,19 @@ static const uint8_t wifi_icon[] = {
     0x08, // ...#...
 };
 
+// Hue lightbulb icon (7 wide x 9 tall), 1 byte per row, MSB-left
+static const uint8_t hue_icon[] = {
+    0x1C, // ..###..
+    0x22, // .#...#.
+    0x41, // #.....#
+    0x41, // #.....#
+    0x41, // #.....#
+    0x22, // .#...#.
+    0x1C, // ..###..
+    0x1C, // ..###..
+    0x08, // ...#...
+};
+
 Display::Display() {}
 
 // ST7789 240x135 offsets
@@ -346,7 +359,7 @@ void Display::draw_icon(const uint8_t *bitmap, uint8_t width, uint8_t height,
 
 void Display::update_status(bool connected, bool wifi_connected, uint16_t power,
                             Color zone_color, bool show_ftp, uint16_t ftp,
-                            bool hue_enabled) {
+                            bool hue_enabled, bool hue_reachable) {
   if (connected) {
     // Fill screen with zone color
     clear(zone_color);
@@ -360,9 +373,11 @@ void Display::update_status(bool connected, bool wifi_connected, uint16_t power,
     fill_circle(36, 12, 9, {255, 255, 255});
     draw_icon(wifi_icon, 7, 5, 29, 7, wifi_color, 2);
 
-    // Hue Disabled Indicator (moved right of icons)
+    // Hue icon: white circle background + green/red based on reachability
+    Color hue_color = hue_reachable ? Color{0, 200, 0} : Color{200, 0, 0};
+    fill_circle(60, 12, 9, {255, 255, 255});
+    draw_icon(hue_icon, 7, 9, 54, 3, hue_color, 2);
     if (!hue_enabled) {
-      fill_rect(50, 3, 20, 20, {255, 0, 0});
       text("OFF", 51, 9, {255, 255, 255}, 1);
     }
 
@@ -441,6 +456,11 @@ void Display::update_status(bool connected, bool wifi_connected, uint16_t power,
     Color wifi_color = wifi_connected ? Color{0, 200, 0} : Color{200, 0, 0};
     fill_circle(36, 12, 9, {255, 255, 255});
     draw_icon(wifi_icon, 7, 5, 29, 7, wifi_color, 2);
+
+    // Hue icon: white circle background + green/red based on reachability
+    Color hue_color2 = hue_reachable ? Color{0, 200, 0} : Color{200, 0, 0};
+    fill_circle(60, 12, 9, {255, 255, 255});
+    draw_icon(hue_icon, 7, 9, 54, 3, hue_color2, 2);
 
     text("SCANNING...", 10, 30, {255, 0, 0}, 3);
     // Draw logs handles its own text drawing

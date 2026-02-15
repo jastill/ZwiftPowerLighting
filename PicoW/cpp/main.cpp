@@ -84,6 +84,7 @@ void heartbeat_handler(btstack_timer_source_t *ts) {
         hue.turn_off();
         cyw43_arch_lwip_end();
         hue_auto_off_sent = true;
+        leds.clear(); // Turn off LED strip
         display.set_led({0, 0, 0}); // Sync LED Off
       }
     }
@@ -109,9 +110,17 @@ void on_power_update(uint16_t raw_power) {
 
   last_power = avg_power;
 
+  // Check if we're transitioning from auto-off back to active
+  bool was_auto_off = hue_auto_off_sent;
+  
   if (avg_power > 0) {
     last_active_power_time = to_ms_since_boot(get_absolute_time());
     hue_auto_off_sent = false;
+    
+    // If we were in auto-off state and now have power, explicitly turn everything back on
+    if (was_auto_off && hue_enabled) {
+      printf("[Auto] Power detected after auto-off. Turning lights back on.\n");
+    }
   }
 
   printf("Power: %d W (Raw: %d)\n", avg_power, raw_power);
@@ -120,7 +129,7 @@ void on_power_update(uint16_t raw_power) {
   bool wifi_up =
       cyw43_tcpip_link_status(&cyw43_state, CYW43_ITF_STA) == CYW43_LINK_UP;
   display.update_status(true, wifi_up, avg_power, zone_color, show_ftp,
-                        current_ftp, hue_enabled);
+                        current_ftp, hue_enabled, hue.hub_reachable);
 
   // Gate LED Control matches Hue State
   if (hue_enabled && !hue_auto_off_sent) {
@@ -211,6 +220,7 @@ void ui_handler(btstack_timer_source_t *ts) {
         cyw43_arch_lwip_begin();
         if (!hue_enabled) {
           hue.turn_off();
+          leds.clear(); // Turn off LED strip
           display.set_led({0, 0, 0}); // Sync LED Off
         } else {
           // Immediate Wake with current settings
@@ -236,7 +246,7 @@ void ui_handler(btstack_timer_source_t *ts) {
     bool wifi_up =
         cyw43_tcpip_link_status(&cyw43_state, CYW43_ITF_STA) == CYW43_LINK_UP;
     display.update_status(true, wifi_up, last_power, zone_color, show_ftp,
-                          current_ftp, hue_enabled);
+                          current_ftp, hue_enabled, hue.hub_reachable);
   }
 
   btstack_run_loop_set_timer(ts, 20); // Poll at 50Hz (20ms)
@@ -276,6 +286,7 @@ int main() {
   } else {
     printf("WiFi Connected!\n");
     hue.init();
+    hue.check_reachable();
   }
 
   // 1. Initialize

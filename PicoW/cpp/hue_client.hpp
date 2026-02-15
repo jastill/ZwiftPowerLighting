@@ -1,7 +1,7 @@
 #pragma once
 
 #include "config.h"
-#include "lwip/tcp.h"
+#include "pico/cyw43_arch.h"
 #include "pico/stdlib.h"
 #include <string>
 
@@ -15,6 +15,9 @@ public:
   void update(Color color);
   void turn_off();
   void on_request_complete() { request_in_progress = false; }
+  bool check_reachable();
+
+  bool hub_reachable;
 
 private:
   uint32_t last_update_ms;

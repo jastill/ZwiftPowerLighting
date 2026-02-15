@@ -23,13 +23,87 @@ static void hue_err(void *arg, err_t err);
 static HueClient *g_hue_client = nullptr;
 
 HueClient::HueClient()
-    : last_update_ms(0), request_in_progress(false), first_run(true) {
+    : last_update_ms(0), request_in_progress(false), first_run(true),
+      hub_reachable(false) {
   last_color = {0, 0, 0};
   g_hue_client = this;
 }
 
 void HueClient::init() {
   printf("Hue Client Initialized. Target: %s Group: %s\n", HUE_IP, HUE_GROUP);
+}
+
+// Blocking TCP connect to check if Hue bridge is reachable
+// Must be called before BTstack run loop starts (uses polling)
+static volatile bool reachability_done;
+static volatile bool reachability_result;
+
+static err_t reachable_connected(void *arg, struct tcp_pcb *tpcb, err_t err) {
+  (void)arg;
+  reachability_result = (err == ERR_OK);
+  reachability_done = true;
+  tcp_close(tpcb);
+  return ERR_OK;
+}
+
+static void reachable_err(void *arg, err_t err) {
+  (void)arg;
+  (void)err;
+  reachability_result = false;
+  reachability_done = true;
+}
+
+bool HueClient::check_reachable() {
+  printf("[Hue] Checking reachability of %s...\n", HUE_IP);
+
+  ip_addr_t ip;
+  if (!ipaddr_aton(HUE_IP, &ip)) {
+    printf("[Hue] Invalid IP: %s\n", HUE_IP);
+    hub_reachable = false;
+    return false;
+  }
+
+  reachability_done = false;
+  reachability_result = false;
+
+  cyw43_arch_lwip_begin();
+  struct tcp_pcb *pcb = tcp_new();
+  if (!pcb) {
+    cyw43_arch_lwip_end();
+    printf("[Hue] Failed to create PCB for reachability check\n");
+    hub_reachable = false;
+    return false;
+  }
+
+  tcp_err(pcb, reachable_err);
+  err_t err = tcp_connect(pcb, &ip, 80, reachable_connected);
+  cyw43_arch_lwip_end();
+
+  if (err != ERR_OK) {
+    printf("[Hue] tcp_connect failed: %d\n", err);
+    hub_reachable = false;
+    return false;
+  }
+
+  // Poll until connected or timeout (3 seconds)
+  uint32_t start = to_ms_since_boot(get_absolute_time());
+  while (!reachability_done) {
+    uint32_t now = to_ms_since_boot(get_absolute_time());
+    if (now - start > 3000) {
+      printf("[Hue] Reachability check timed out\n");
+      cyw43_arch_lwip_begin();
+      tcp_abort(pcb);
+      cyw43_arch_lwip_end();
+      hub_reachable = false;
+      return false;
+    }
+    cyw43_arch_poll();
+    sleep_ms(10);
+  }
+
+  hub_reachable = reachability_result;
+  printf("[Hue] Hub reachable: %s\n", hub_reachable ? "YES" : "NO");
+  return hub_reachable;
 }
 
 // Simple RGB to HSV/Hue mapping
