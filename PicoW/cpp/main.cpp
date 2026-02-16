@@ -267,7 +267,7 @@ void on_scan_result(const char *mac, const char *name) {
 int main() {
   stdio_init_all();
   sleep_ms(5000); // Wait for USB serial
-  printf("ZwiftPowerLighting C++ Starting... VERSION 2.0 (STABLE)\n");
+  printf("ZwiftPowerLighting v%s Starting...\n", FIRMWARE_VERSION);
 
   // Initialize CYW43 (Required for WiFi/BT)
   if (cyw43_arch_init()) {
@@ -292,8 +292,9 @@ int main() {
   // 1. Initialize
   leds.init();
   display.init();
-  display.text("ZwiftPowerLighting\nC++ Starting...", 10, 10, {255, 255, 255},
-               2);
+  char version_buf[64];
+  snprintf(version_buf, sizeof(version_buf), "ZwiftPowerLighting\nv%s", FIRMWARE_VERSION);
+  display.text(version_buf, 10, 10, {255, 255, 255}, 2);
 
   // 2. Startup Cycle
   leds.startup_cycle();

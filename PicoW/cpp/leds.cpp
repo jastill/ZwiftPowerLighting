@@ -9,7 +9,7 @@ LEDController::LEDController() {
 
 void LEDController::init() {
   uint offset = pio_add_program(pio, &ws2812_program);
-  ws2812_program_init(pio, sm, offset, LED_PIN, 800000, true);
+  ws2812_program_init(pio, sm, offset, LED_PIN, 800000, false);
   clear();
 }
 

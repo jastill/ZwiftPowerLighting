@@ -3,10 +3,14 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "pico/stdlib.h"
+
+// Firmware Version
+constexpr const char* FIRMWARE_VERSION = "2.1.0";
 
 // Hardware Configuration
 constexpr uint LED_PIN = 28;
-constexpr uint NUM_LEDS = 6;
+constexpr uint NUM_LEDS = 300;
 
 // Display Pins (Pimoroni Pico Display)
 constexpr uint DISPLAY_WIDTH = 240;
