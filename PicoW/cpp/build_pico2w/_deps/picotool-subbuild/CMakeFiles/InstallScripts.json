@@ -1,7 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/Users/johnastill/Documents/Development/ZwiftPowerLighting/PicoW/cpp/build_pico2w/_deps/picotool-subbuild/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

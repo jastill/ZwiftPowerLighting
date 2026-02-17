@@ -1,1 +1,4 @@
 .env
+build/
+build_picow/
+build_pico2w/
