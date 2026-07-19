@@ -34,21 +34,29 @@ void LEDController::clear() { fill({0, 0, 0}); }
 void LEDController::startup_cycle() {
   printf("Starting LED cycle...\n");
 
-  // Progressively light each LED with its zone color
-  for (size_t step = 0; step < POWER_ZONES.size() && step < NUM_LEDS; ++step) {
+  size_t num_zones = POWER_ZONES.size();
+  size_t leds_per_zone = NUM_LEDS / num_zones;
+
+  // Progressively fill all LEDs, ~3.5s sweep + 0.5s hold = 4s total
+  uint32_t sweep_ms = 3500;
+  uint32_t step_delay_ms = sweep_ms / NUM_LEDS;
+  if (step_delay_ms < 1) step_delay_ms = 1;
+
+  for (size_t step = 0; step < NUM_LEDS; ++step) {
     for (size_t i = 0; i <= step; ++i) {
-      put_pixel(urgb_u32(POWER_ZONES[i].color.r, POWER_ZONES[i].color.g,
-                          POWER_ZONES[i].color.b));
+      size_t zone_idx = i / leds_per_zone;
+      if (zone_idx >= num_zones) zone_idx = num_zones - 1;
+      const Color &c = POWER_ZONES[zone_idx].color;
+      put_pixel(urgb_u32(c.r, c.g, c.b));
     }
-    // Fill remaining LEDs with off
     for (size_t i = step + 1; i < NUM_LEDS; ++i) {
       put_pixel(0);
     }
     sleep_us(50);
-    sleep_ms(300);
+    sleep_ms(step_delay_ms);
   }
 
-  // Hold all zone colors for a moment
+  // Hold all zone colors briefly
   sleep_ms(500);
   clear();
 }

@@ -49,6 +49,7 @@ add_executable(ZwiftPowerLighting
     display.cpp
     ble_client.cpp
     hue_client.cpp
+    ftp_client.cpp
 )
 
 # Generate PIO header

@@ -1,6 +1,7 @@
 #include "ble_client.hpp"
 #include "btstack_run_loop.h"
 #include "display.hpp"
+#include "ftp_client.hpp"
 #include "hue_client.hpp"
 #include "leds.hpp"
 #include "pico/cyw43_arch.h"
@@ -287,6 +288,13 @@ int main() {
     printf("WiFi Connected!\n");
     hue.init();
     hue.check_reachable();
+
+    uint16_t remote_ftp;
+    if (fetch_remote_ftp(remote_ftp)) {
+      current_ftp = remote_ftp;
+    } else {
+      printf("[FTP] Falling back to default FTP: %d\n", current_ftp);
+    }
   }
 
   // 1. Initialize
